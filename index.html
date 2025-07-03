@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en" class="bg-gray-100 text-gray-900">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Smart Solar Parking</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com "></script>
+
+  <!-- Manifest for PWA -->
+  <link rel="manifest" href="manifest.json" />
+
+  <!-- Ikon untuk PWA -->
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <meta name="theme-color" content="#10b981"/>
+
+  <style>
+    body.dark-mode {
+      background-color: #111827;
+      color: #f9fafb;
+    }
+  </style>
+</head>
+<body class="min-h-screen font-sans">
+  <div id="app" class="flex flex-col min-h-screen">
+    <!-- Header -->
+    <header class="bg-green-700 text-white p-4 shadow-md">
+      <div class="max-w-4xl mx-auto flex justify-between items-center">
+        <h1 class="text-xl font-bold">Smart Solar Parking</h1>
+        <nav class="space-x-4">
+          <button onclick="navigate('main-menu')" class="hover:underline">Main Menu</button>
+          <button onclick="navigate('system')" class="hover:underline">System</button>
+          <button onclick="navigate('about')" class="hover:underline">About</button>
+          <button onclick="navigate('settings')" class="hover:underline">Settings</button>
+        </nav>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main id="content" class="flex-grow p-6 max-w-4xl mx-auto w-full"></main>
+
+    <!-- Footer -->
+    <footer class="text-center text-sm py-4 mt-6 text-gray-500">
+      &copy; 2025 Smart Solar Parking System | Muhammad Rahmat Ikhwan
+    </footer>
+  </div>
+
+  <!-- MQTT.js CDN -->
+  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js "></script>
+
+  <!-- App Logic -->
+  <script>
+    let currentPage = 'main-menu';
+    let darkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+    const slots = [
+      { id: 1, occupied: false },
+      { id: 2, occupied: true },
+      { id: 3, occupied: false }
+    ];
+
+    function navigate(page) {
+      currentPage = page;
+      render();
+    }
+
+    function toggleDarkMode() {
+      darkMode = !darkMode;
+      document.body.classList.toggle('dark-mode', darkMode);
+      localStorage.setItem('darkMode', darkMode ? 'enabled' : 'disabled');
+    }
+
+    function simulateMQTTUpdate() {
+      // Simulate MQTT update
+      if (currentPage === 'system') {
+        const randomIndex = Math.floor(Math.random() * 3);
+        const updatedSlots = [...slots];
+        updatedSlots[randomIndex].occupied = !updatedSlots[randomIndex].occupied;
+        Object.assign(slots, updatedSlots);
+        renderSystemPage();
+      }
+    }
+
+    function render() {
+      const content = document.getElementById('content');
+      content.innerHTML = '';
+
+      if (currentPage === 'main-menu') {
+        content.innerHTML = `
+          <div class="max-w-lg mx-auto space-y-4 text-center">
+            <h2 class="text-2xl font-bold mb-6">Main Menu</h2>
+            <button onclick="navigate('system')" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded transition">Start System</button>
+            <button onclick="navigate('about')" class="w-full py-3 bg-gray-500 hover:bg-gray-600 text-white rounded transition">About</button>
+            <button onclick="navigate('settings')" class="w-full py-3 bg-gray-500 hover:bg-gray-600 text-white rounded transition">Settings</button>
+          </div>
+        `;
+      } else if (currentPage === 'system') {
+        renderSystemPage();
+      } else if (currentPage === 'about') {
+        content.innerHTML = `
+          <div class="p-6 space-y-6">
+            <h2 class="text-2xl font-bold">Tentang Projek</h2>
+            <p>Sistem ini adalah projek akhir Sarjana Muda Kejuruteraan Elektrik dari UTeM. Projek ini membentangkan pembangunan sistem tempat letak kenderaan anti-kecurian berkuasa solar menggunakan teknologi komunikasi RFID.</p>
+            <h3 class="text-xl font-semibold">Komponen Utama:</h3>
+            <ul class="list-disc list-inside space-y-1">
+              <li>ESP32 Microcontroller</li>
+              <li>Modul RFID RC522</li>
+              <li>Papan Suria 6W</li>
+              <li>Bateri Li-ion 3.7V</li>
+              <li>Motorservo untuk gate</li>
+              <li>LCD 16x2 untuk paparan</li>
+            </ul>
+            <p>Projek ini bertujuan untuk meningkatkan keselamatan parkir, menjimatkan tenaga dan memberi pengalaman pengguna yang lebih baik.</p>
+          </div>
+        `;
+      } else if (currentPage === 'settings') {
+        content.innerHTML = `
+          <div class="p-6 space-y-6">
+            <h2 class="text-2xl font-bold">Tetapan</h2>
+            <div class="flex justify-between items-center">
+              <span>Dark Mode</span>
+              <button onclick="toggleDarkMode()" class="px-4 py-2 rounded ${darkMode ? 'bg-yellow-500' : 'bg-blue-600 text-white'}">
+                ${darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+              </button>
+            </div>
+            <p>Kini: ${darkMode ? 'Dark Mode Aktif' : 'Light Mode Aktif'}</p>
+          </div>
+        `;
+      }
+    }
+
+    function renderSystemPage() {
+      const content = document.getElementById('content');
+      content.innerHTML = `
+        <div class="space-y-6">
+          <h2 class="text-2xl font-bold text-center">Parking System Dashboard</h2>
+
+          <!-- MQTT Status -->
+          <div class="p-2 text-center rounded bg-gray-200 dark:bg-gray-800">MQTT: Connected</div>
+
+          <!-- RFID Authentication -->
+          <div class="shadow rounded-lg p-4 bg-white dark:bg-gray-800">
+            <h3 class="font-semibold text-lg mb-2">RFID Authentication</h3>
+            <input type="text" id="rfidInput" placeholder="Enter RFID Tag" class="border p-2 w-full mb-2 dark:bg-gray-700 dark:border-gray-600"/>
+            <button onclick="alert('Submitted: ' + document.getElementById('rfidInput').value)" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">Submit</button>
+            <p class="mt-2">Gate Status: <span class="text-green-500">Open</span></p>
+            <p>Invalid Attempts: <strong>0</strong> / 3</p>
+          </div>
+
+          <!-- Parking Slots -->
+          <div class="shadow rounded-lg p-4 bg-white dark:bg-gray-800">
+            <h3 class="font-semibold text-lg mb-2">Parking Slots</h3>
+            <div class="grid grid-cols-3 gap-4">
+              ${slots.map(slot => `
+                <div class="p-4 border rounded cursor-pointer ${
+                  slot.occupied ? 'bg-red-200' : 'bg-green-200'
+                }">
+                  <h4 class="font-medium">Slot ${slot.id}</h4>
+                  <p>${slot.occupied ? 'Occupied' : 'Available'}</p>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+
+          <!-- Power Monitoring -->
+          <div class="shadow rounded-lg p-4 bg-white dark:bg-gray-800">
+            <h3 class="font-semibold text-lg mb-2">Power Monitoring</h3>
+            <p>Solar Panel Output: 6W</p>
+            <p>Battery Level: 3.7V / 2600mAh</p>
+            <p>Status: ✅ Connected</p>
+          </div>
+        </div>
+      `;
+    }
+
+    function initMQTT() {
+      const client = mqtt.connect('ws://broker.hivemq.com:8000/mqtt');
+
+      client.on('connect', () => {
+        console.log('Connected to MQTT Broker');
+        client.subscribe('smartparking/status');
+      });
+
+      client.on('message', (topic, message) => {
+        try {
+          const data = JSON.parse(message.toString());
+          if (data.type === 'slotUpdate') {
+            Object.assign(slots, data.slots);
+            if (currentPage === 'system') renderSystemPage();
+          }
+        } catch (e) {
+          console.error('Invalid JSON', e);
+        }
+      });
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+      const savedMode = localStorage.getItem('darkMode');
+      if (savedMode === 'enabled') {
+        darkMode = true;
+        document.body.classList.add('dark-mode');
+      }
+
+      initMQTT();
+      setInterval(simulateMQTTUpdate, 5000); // Update every 5s
+      render();
+    });
+  </script>
+
+  <!-- SVG Visual Parking -->
+  <svg class="hidden" xmlns="http://www.w3.org/2000/svg" width="100" height="60">
+    <rect x="10" y="10" width="80" height="40" rx="4" fill="#10B981"/>
+    <circle cx="30" cy="30" r="5" fill="white"/>
+    <circle cx="70" cy="30" r="5" fill="white"/>
+    <rect x="40" y="20" width="20" height="20" fill="#FBBF24"/>
+  </svg>
+</body>
+</html>
